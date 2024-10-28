@@ -1,5 +1,5 @@
 # NLP Project 16
-# 26.10.2024
+# 28.10.2024
 # Eetu Hyypiö
 
 import pandas as pd
@@ -50,7 +50,32 @@ def extract_topic(path_to_dialogue_file, path_to_topic_file, topic_number):
 def create_topic_dataframe(path_to_dialogue_file, path_to_topic_file, topic_number):
 
     topic_dialogue = extract_topic(path_to_dialogue_file, path_to_topic_file, topic_number)
-    split_dialogue = [line.split('__eou__') for line in topic_dialogue]
+
+
+    #split_dialogue = [line.split('__eou__') for line in topic_dialogue]
+
+    split_dialogue = []
+
+    for line in topic_dialogue:
+
+        split_line = line.split('__eou__')
+
+        for i in range(len(split_line)):
+            
+            if split_line[i][0] == " ":
+
+                new_line = split_line[i][1:]
+                split_line[i] = new_line
+
+            if split_line[i][-1] == " ":
+
+                new_line = split_line[i][:-1]
+                split_line[i] = new_line
+
+
+        split_dialogue.append(split_line)
+
+
     topic_dialogue_data = pd.DataFrame(split_dialogue)
 
     return topic_dialogue_data

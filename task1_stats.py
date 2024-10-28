@@ -1,5 +1,5 @@
 # NLP Project 16
-# 26.10.2024
+# 28.10.2024
 # Eetu Hyypiö
 
 import pandas as pd
@@ -8,92 +8,115 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk import pos_tag
 import string
-from task1_save_topic import create_topic_dataframe
 
 nltk.download('stopwords')
 nltk.download('punkt_tab')
 nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger_eng')
 
-# Takes into dataframe and concatenates everything in it to be a single string. This is for tokenization and such
-def form_dialogue_string(dataframe):
-
-    dialogue_string = ''
-    rows, columns = dataframe.shape
-
-    for row in range(rows):
-        for column in range(columns):
-            if type(dataframe.iat[row, column]) is str:
-                dialogue_string = dialogue_string + dataframe.iat[row, column]
-
-    return dialogue_string
-
-
-# Remove punctuation, lowercase and tokenize
-# There still remains things like "sure.it" and "t", remove
-def preprocess_dialogue(dialogue):
-
-    stop = set(list(string.punctuation))
-
-    tokenized = word_tokenize(dialogue.lower())
-    processed_dialogue = [word for word in tokenized if word not in stop]
-
-    return processed_dialogue
-
-
-# Calculates the vocabulary size for a dataframe
-def vocabulary_size(dataframe):
+# Open the data that was made with task1_save_topic.py
+def open_process_data(name_of_excel_file):
     
-    dialogue_string = form_dialogue_string(dataframe)
-    processed_dialogue = preprocess_dialogue(dialogue_string)
-    unique_tokens = set(processed_dialogue)
-    vocabulary_size = len(unique_tokens)
+    data = pd.read_excel(name_of_excel_file)
+    rows, columns = data.shape
+    dialogues = []
+    
+    for row in range(rows):
+
+        utterances = []
+
+        for column in range(columns):
+            if type(data.iat[row, column]) is str:
+                utterances.append(data.iat[row, column])
+            
+        dialogues.append(utterances)
+
+    return dialogues
+
+# Tokenizes, lowers and removes special characters from data
+def tokenize_data(dialogues):
+    
+    special = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '=', '+', '[', ']', '{', '}', ';', ':', '"', "'", '<', '>', ',', '.', '/', '?', '\\', '|', '`', '~', '...']
+    tokenized_dialogues = []
+
+    for dialogue in dialogues:
+        tokenized_dialogue = []
+
+        for utterance in dialogue:
+            processed_tokenized_utterance = []
+            tokenized_utterance = word_tokenize(utterance)
+
+            for token in tokenized_utterance:
+                token.lower()
+                if (token not in special) and (len(token) != 1):
+                    processed_tokenized_utterance.append(token)
+                
+            tokenized_dialogue.append(processed_tokenized_utterance)
+        
+        tokenized_dialogues.append(tokenized_dialogue)
+    
+    return tokenized_dialogues
+
+# Calculates the vocabulary size for data. Data is given in the form that tokenize_data returns it
+def vocabulary_size(dialogues):
+    
+    tokenized_dialogues = tokenize_data(dialogues)
+    counted_words = []
+    vocabulary_size = 0
+
+    for dialogue in tokenized_dialogues:
+        for utterance in dialogue:
+            for token in utterance:
+                if token not in counted_words:
+                    vocabulary_size += 1
+                    counted_words.append(token)
+                    #print("Unique token: " + token)
 
     return vocabulary_size
 
-
-# Calculates the number of utterances for a dataframe
-def count_utterances(dataframe):
+# Calculates the number of utterances for a dialogue
+def count_utterances(dialogues):
 
     num_of_utterances = 0
-    rows, columns = dataframe.shape
 
-    for row in range(rows):
-        for column in range(columns):
-            if type(dataframe.iat[row, column]) is str:
-                num_of_utterances = num_of_utterances + 1
+    for dialogue in dialogues:
+        for utterance in dialogue:
+            num_of_utterances += 1
 
     return num_of_utterances
 
+# Count average tokens per utterance for dialogue
+def count_avg_tokens_per_utterance(dialogues):
 
-# Count average tokens per utterance from a dataframe
-def count_avg_tokens_per_utterance(dataframe):
+    num_of_utterances = count_utterances(dialogues)
+    tokenized_dialogues = tokenize_data(dialogues)
+    total_tokens = 0
 
-    num_of_utterances = count_utterances(dataframe)
+    for dialogue in tokenized_dialogues:
+        for utterance in dialogue:
+            total_tokens += len(utterance)
 
-    dialogue_string = form_dialogue_string(dataframe)
-    processed_dialogue = preprocess_dialogue(dialogue_string)
-
-    avg_tokens_per_utterance = len(processed_dialogue) / num_of_utterances
+    avg_tokens_per_utterance = total_tokens / num_of_utterances
 
     return avg_tokens_per_utterance
 
 
 # Uses NLTK part of speech tagger to identify pronouns, counts
 # the number of pronouns and then the average per utterance
-def avg_pronouns_per_utterance(dataframe):
-
-    dialogue_string = form_dialogue_string(dataframe)
-    processed_dialogue = preprocess_dialogue(dialogue_string)
-
-    tagged_dialogue = pos_tag(processed_dialogue)
+def avg_pronouns_per_utterance(dialogues):
     
+    tokenized_dialogues = tokenize_data(dialogues)
     pronoun_count = 0
 
-    for (token, prp_tag) in tagged_dialogue:
-        if prp_tag == ('PRP' or 'PRP$'):
-            pronoun_count = pronoun_count + 1
+    for dialogue in tokenized_dialogues:
+        for utterance in dialogue:
+            tagged_utterance = pos_tag(utterance)
 
-    num_of_utterances = count_utterances(dataframe)
+            for (token, prp_tag) in tagged_utterance:
+                if prp_tag == ('PRP' or 'PRP$'):
+                    pronoun_count += 1
+
+    num_of_utterances = count_utterances(dialogues)
     avg_prp = pronoun_count / num_of_utterances
 
     return avg_prp
@@ -105,7 +128,7 @@ def avg_pronouns_per_utterance(dataframe):
 # The custom list of agreement/negation words is subject to change
 # choice = 1 counts average number of agreement words
 # choice = 2 does the same for negation words
-def avg_agreement_negation_per_utterance(dataframe, choice):
+def avg_agreement_negation_per_utterance(dialogues, choice):
 
     agreement_words = ['yes', 'ok', 'sure', 'okay', 'agreed', 'agree']
     negation_words = ['no', 'not', "don't", "can't", 'neither', ]
@@ -118,33 +141,32 @@ def avg_agreement_negation_per_utterance(dataframe, choice):
         print("Second argument: 1 for agreement words, 2 for negation words")
         return 0
 
-    dialogue_string = form_dialogue_string(dataframe)
-    processed_dialogue = preprocess_dialogue(dialogue_string)
-    num_of_utterances = count_utterances(dataframe)
-
+    tokenized_dialogues = tokenize_data(dialogues)
+    num_of_utterances = count_utterances(dialogues)
     num_words_to_count = 0
 
-    for word in processed_dialogue:
-        if word in words_to_count:
-            num_words_to_count = num_words_to_count + 1
+    for dialogue in tokenized_dialogues:
+        for utterance in dialogue:
+            for token in utterance:
+                if token in words_to_count:
+                    num_words_to_count = num_words_to_count + 1
     
-    avg_agreement = num_words_to_count / num_of_utterances
+    avg_agreement_negation = num_words_to_count / num_of_utterances
 
-    return avg_agreement
+    return avg_agreement_negation
 
 # Prints all stats for a given topic
-def create_stats_table(path_to_dialogue_file, path_to_topic_file, topic_number):
+def print_stats_from_excel(name_of_excel_file):
 
-    topic_data = create_topic_dataframe(path_to_dialogue_file, path_to_topic_file, topic_number)
+    dialogues = open_process_data(name_of_excel_file)
+    vocab = vocabulary_size(dialogues)
+    utterances = count_utterances(dialogues)
+    tokens_per_utterance = count_avg_tokens_per_utterance(dialogues)
+    avg_prp = avg_pronouns_per_utterance(dialogues)
+    avg_agreement = avg_agreement_negation_per_utterance(dialogues, 1)
+    avg_negation = avg_agreement_negation_per_utterance(dialogues, 2)
 
-    vocab = vocabulary_size(topic_data)
-    utterances = count_utterances(topic_data)
-    tokens_per_utterance = count_avg_tokens_per_utterance(topic_data)
-    avg_prp = avg_pronouns_per_utterance(topic_data)
-    avg_agreement = avg_agreement_negation_per_utterance(topic_data, 1)
-    avg_negation = avg_agreement_negation_per_utterance(topic_data, 2)
-
-    print("Stats for topic number " + topic_number + ":")
+    print("Stats for file \"" + name_of_excel_file + "\":")
     print("Size of vocabulary: " + str(vocab))
     print("Number of utterances: " + str(utterances))
     print("Average number of tokens per utterance: " + str(tokens_per_utterance))
@@ -152,15 +174,15 @@ def create_stats_table(path_to_dialogue_file, path_to_topic_file, topic_number):
     print("Average number of agreement words per utterance: " + str(avg_agreement))
     print("Average number of negation words per utterance: " + str(avg_negation))
 
-
 def main():
 
-    print("Give the topic number for which to calculate stats. 'all' calculates stats for all dialogue")
-    topic_number = input("Topic: ")
+    print("Give name of data excel file for which to calculate stats")
+    name_of_excel_file = input("File name: ")
 
-    create_stats_table('ijcnlp_dailydialog/dialogues_text.txt', 'ijcnlp_dailydialog/dialogues_topic.txt', topic_number)
+    if '.xlsx' not in name_of_excel_file:
+        name_of_excel_file = name_of_excel_file + '.xlsx'
 
-
+    print_stats_from_excel(name_of_excel_file)
 
 if __name__ == "__main__":
     main()
