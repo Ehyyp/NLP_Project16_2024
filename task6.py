@@ -14,15 +14,15 @@ import string
 # Use task1_save_topic.py to save topic dialogues in this excel form
 def open_process_data(name_of_data_file):
     
-    data = pd.read_excel(name_of_data_file)
+    data = pd.read_excel(name_of_data_file, header=None)
     rows, columns = data.shape
     dialogs = []
-    
+
     for row in range(rows):
         utterances = []
 
         for column in range(columns):
-            if type(data.iat[row, column]) is str:
+            if (type(data.iat[row, column]) is str) & (data.iat[row, column] != "\n"):
                 utterances.append(data.iat[row, column])
             
         dialogs.append(utterances)
@@ -78,6 +78,7 @@ def save_to_json(predictions, saved_file_name):
 
 
 def main():
+
     print("Input name of excel data file to be classified")
     name_of_excel_file = input("Excel file name: ")
     print("Input name of json file where to save predictions")
