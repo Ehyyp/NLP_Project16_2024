@@ -55,18 +55,27 @@ def validate(emotions):
     tn = 0
     fp = 0
     fn = 0
+
+    no_emos = 0
+    no_predictions =  0
+
     for i in range(len(emotions)):
         for j in range(len(emotions[i])):
             try:
                 tag = emo_tags[int(en[i][j])]
                 utterance_emo = emotions[i][j]
+                if len(utterance_emo) == 0:
+                    no_predictions += 1
                 if tag in utterance_emo:
                     tp += 1
                 elif tag == "no emotion":
+                    no_emos += 1
                     if len(utterance_emo) == 0:
                         tn += 1
                     else:
-                        fn += 1
+                        fp += 1
+                elif len(utterance_emo) == 0:
+                    fn += 1
                 else:
                     fp += 1
             except IndexError:
@@ -75,12 +84,17 @@ def validate(emotions):
     total = fp + fn + tp + tn
 
     accuracy = (tp + tn) / total
-    precision = tp / (tp + fn)
+    precision = tp / (tp + fp)
+
+    ratio_no_emos = no_emos / total
+    ratio_no_predictions = no_predictions / total
     
     print("WNAffect scores: ")
     print("Total utterance count: " + str(total))
     print("Accuracy: " + str(round(accuracy ,3)))
     print("Precision: " + str(round(precision, 3)))
+    print("No tag ratio: " + str(round(ratio_no_emos, 3)))
+    print("No prediction ratio: " + str(round(ratio_no_predictions, 3)))
 
     return
 
@@ -90,6 +104,7 @@ def save_emotions():
     dialogs = get_dialogs()
 
     emotions = []
+
     for dialog in dialogs:
         dialog_emo = []
         for utterance in dialog:
@@ -120,6 +135,6 @@ if __name__ == "__main__":
     # nltk.help.upenn_tagset()
 
     # process dialogues and store emotions
-    save_emotions()
+    # save_emotions()
 
     main()
