@@ -1,14 +1,17 @@
+# NLP project 16
+# 3.11.2024
+# Sami Karhumaa
+
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import json
 from utils import get_dialogs
-
+import numpy as np
+import matplotlib.pyplot as plt
 
 def main():
     
     analyzer = SentimentIntensityAnalyzer()
     dialogs = get_dialogs()
-
-    #print(analyzer.polarity_scores("Isn’t he the best instructor? I think he’s so hot. Wow! I really feel energized, dont’t you?"))
 
     dialog_sentiments = []
     for dialog in dialogs:
@@ -24,5 +27,25 @@ def main():
 
     return
 
+def results():
+
+    with open("sentiments.json", 'r') as file:
+        sentiments = json.load(file)
+    
+    compounds = []
+    for dialog in sentiments:
+        for sentiment in dialog:
+            compounds.append(sentiment['compound'])
+
+    bins = np.linspace(-1,1)
+    data = compounds
+    plt.hist(data, bins=bins, edgecolor='black')
+    plt.xticks(rotation=90)
+    plt.title('Vader sentiment analysis')
+    plt.xlabel('Compound score')
+
+    plt.show()
+
 if __name__ == "__main__":
-    main()
+    #main()
+    results()

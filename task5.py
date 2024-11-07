@@ -1,3 +1,7 @@
+# NLP project 16
+# 3.11.2024
+# Sami Karhumaa
+
 import json
 from nltk.tokenize import word_tokenize
 from nltk import pos_tag
@@ -6,6 +10,8 @@ import pandas as pd
 from utils import get_dialogs
 from wnaffect import WNAffect
 from emotion import Emotion
+import numpy as np
+import matplotlib.pyplot as plt
 
 wna = WNAffect('wordnet-1.6/', 'wn-domains-3.2/')
 
@@ -43,6 +49,9 @@ def get_emotions(utterance):
 def get_upper_level_emotion(emo):
 
     parent = emo.get_level(emo.level - 1)
+    if emo.name == 'love':
+        for child in emo.children:
+            print(child.name)
 
     while parent.name != "negative-emotion" and parent.name != "positive-emotion" and parent.name != "positive-emotion" and parent.name != "ambiguous-emotion" and parent.name != "neutral-emotion":
         parent = emo.get_level(parent.level - 1)
@@ -117,12 +126,59 @@ def get_compared_result(sentiment_value, emotion_values):
             return 0.5
         else:
             return 0
+
+def results():
+    df = pd.read_excel('task5_data.xlsx')
+    correlation = df['compability index']
+
+    counts = correlation.value_counts().sort_index()
+
+    print('incompatible: ', counts[0])
+    print('partial compability: ', counts[0.5])
+    print('Full compability: ', counts[1])
+
+    bin_labels = ['Incompatibility', 'Partial compatibility', 'Full compatibility']
+
+    plt.bar(bin_labels, counts, edgecolor='black')
+    plt.xticks(rotation=90)
+    plt.title('Correlation distribution')
+
+    plt.show()
+
+def results_none_removed():
+    df = pd.read_excel('task5_data.xlsx')
+    correlation = df['compability index']
+    emo_value = df['emotion value']
+
+    no_none_correlation = []
+    for i in range(len(correlation)):
+        if not pd.isna(emo_value[i]):
+            no_none_correlation.append(correlation[i])
+    
+    nncor = {}
+    nncor['compability index'] = no_none_correlation
+    df = pd.DataFrame(nncor)
+
+    counts = df['compability index'].value_counts().sort_index()
+
+    print('incompatible: ', counts[0])
+    print('partial compability: ', counts[0.5])
+    print('Full compability: ', counts[1])
+
+    bin_labels = ['Incompatibility', 'Partial compatibility', 'Full compatibility']
+
+    plt.bar(bin_labels, counts, edgecolor='black')
+    plt.xticks(rotation=90)
+    plt.title('Correlation distribution')
+
+    plt.show()
+
 def main():
     
     #save_upper_level_emotions()
-    compare_and_save()
-
-    return
+    #compare_and_save()
+    #results()
+    results_none_removed()
 
 if __name__ == "__main__":
     main()

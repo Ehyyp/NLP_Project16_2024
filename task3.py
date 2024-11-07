@@ -8,8 +8,10 @@ from nltk import pos_tag
 import json
 import nltk
 from emotion import Emotion
-
-from utils import get_dialogs
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+import utils
+import random
+import numpy as np
 
 wna = WNAffect('wordnet-1.6/', 'wn-domains-3.2/')
 
@@ -98,10 +100,48 @@ def validate(emotions):
 
     return
 
+def validate_m(emotions):
+    
+    emotion_tags = utils.get_emotions(utils.get_dialogs())
+
+    emo_tags = {0: "no emotion", 1: "anger", 2: "disgust", 3: "fear", 4: "happiness", 5: "sadness", 6: "surprise"}
+
+    y_true = []
+    for tag in emotion_tags:
+        y_true.append(emo_tags[int(tag)])
+
+    y_pred = get_pred_class(emotions, y_true)
+
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred, average='macro')
+    recall = recall_score(y_true, y_pred, average='macro', zero_division=np.nan)
+
+    print("Accuracy: " + str(round(accuracy ,3)))
+    print("Precision: " + str(round(precision, 3)))
+    print("Recall: " + str(round(recall, 3)))
+
+def get_pred_class(emotions, y_true):
+
+    y_pred = []
+    for i in range(len(emotions)):
+        if y_true[i] in emotions[i]:
+            y_pred.append(y_true[i])
+        elif len(emotions[i]) == 0:
+            y_pred.append('no emotion')
+        elif 'negative-fear' in emotions[i] or 'ambiguous-fear' in emotions[i]:
+            if y_true[i] == 'fear':
+                y_pred.append('fear')
+            else:
+                y_pred.append(emotions[i][0])
+        else:
+            y_pred.append(emotions[i][0])
+    
+    return y_pred
+
 # Calls get_dialogs to load dialogues.
 # Saves emotions fro each utterance to emos.json
 def save_emotions():
-    dialogs = get_dialogs()
+    dialogs = utils.get_dialogs()
 
     emotions = []
 
@@ -115,16 +155,31 @@ def save_emotions():
     with open("emos.json", "w") as f:
         json.dump(emotions, f, indent=4)
 
+def results_a1():
+    with open("emos.json", "r") as f:
+        data = json.load(f)
+    emos = []
+    for d in data:
+        for u in d:
+            emos.append(u)
+
+    validate_m(emos)
+
+def results_a2():
+    with open("emos_upperlevel.json", "r") as f:
+        data = json.load(f)
+    emos = []
+    for d in data:
+        for u in d:
+            emos.append(u)
+
+    validate_m(emos)
+
 # Loads emotions from emos.json and validates them against the expected labels in dialogues_emotion.txt.
 def main():
 
-    with open("emos.json", "r") as f:
-        data = json.load(f)
-
-    validate(data)
-
-    return
-
+    results_a1()
+    results_a2()
 
 if __name__ == "__main__":
 
