@@ -4,7 +4,7 @@
 # separating each utterance by __eou__ and returns a list of lists (one per dialogue).
 def get_dialogs():
 
-    with open("dialogues_text.txt", "r", encoding="utf-8") as file:
+    with open("ijcnlp_dailydialog/dialogues_text.txt", "r", encoding="utf-8") as file:
         dialogs = file.readlines()
 
     parsed_dialogs = []

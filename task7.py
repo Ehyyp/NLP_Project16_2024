@@ -19,20 +19,16 @@ import heapq
 # that dialogue act. Same for sentiment. Calculate the overall sentiment for all utterances with
 # that dialogue act
 
-def main():
+# Calculates the emotion most associated with each dialogue act and the average compound sentiment of each dialogue act
+def calculate_matching(dialogue_acts_data_file, emotions_file, sentiments_file):
 
-    # Make a command line ui to input filenames for data
-    dialogue_acts_data = 'all_dialogues_predictions.json'
-    emotions = 'emos.json'
-    sentiments = 'sentiments.json'
-
-    with open(dialogue_acts_data, 'r', encoding='utf-8') as file:
+    with open(dialogue_acts_data_file, 'r', encoding='utf-8') as file:
         dialogue_acts_data = json.load(file)
 
-    with open(emotions, 'r', encoding='utf-8') as file:
+    with open(emotions_file, 'r', encoding='utf-8') as file:
         emotions = json.load(file)
 
-    with open(sentiments, 'r', encoding='utf-8') as file:
+    with open(sentiments_file, 'r', encoding='utf-8') as file:
         sentiments = json.load(file)
 
     # The first element in the list holds a dictionary that has emotions as keys and the number of times that
@@ -50,7 +46,7 @@ def main():
         "Clarify": [{}, 0, 0],
         #"Clarity": [{}, 0, 0],
         "Emphasis": [{}, 0, 0],
-        "nAnswer": [{}, 0, 0],
+        "nAnswer": [{}, 0, 0], 
         "Greet": [{}, 0, 0],
         "Statement": [{}, 0, 0],
         "Reject": [{}, 0, 0],
@@ -104,7 +100,150 @@ def main():
         if len(correlations[dialogue_act][0]) != 0:
             highest_emotion_correlations.append([dialogue_act, max(correlations[dialogue_act][0], key=correlations[dialogue_act][0].get)])
 
+    return correlations, highest_emotion_correlations
+
+# The data in dialogue act dataframe is converted to be numerical in this format
+# none = 0
+#"Emotion" = 1
+#"yAnswer" = 2
+#"Continuer" = 3
+#"whQuestion" = 4
+#"System" = 5
+#"Accept" = 6
+#"Clarify" = 7
+#"Emphasis" = 8
+#"nAnswer" = 9
+#"Greet" = 10
+#"Statement" = 11
+#"Reject" = 12
+#"Bye" = 13
+#"Other" = 14
+#"ynQuestion" = 15
+def calculate_correlations(dialogue_acts_data_file, emotions_file, sentiments_file):
+
+    # Load data into dataframes
+    dialogue_acts_dataframe = pd.read_json(dialogue_acts_data_file)
+    emotions_dataframe = pd.read_json(emotions_file)
+    sentiments_dataframe= pd.read_json(sentiments_file)
+
+    # Change dialogue acts into numerical variables
+    # Let none be 0
+    dialogue_rows, dialogue_columns = dialogue_acts_dataframe.shape
+    for row in range(dialogue_rows):
+        for column in range(dialogue_columns):
+            if dialogue_acts_dataframe.iloc[row, column] == 'Emotion':
+                dialogue_acts_dataframe.iloc[row, column] = 1
+            elif dialogue_acts_dataframe.iloc[row, column] == 'yAnswer':
+                dialogue_acts_dataframe.iloc[row, column] = 2
+            elif dialogue_acts_dataframe.iloc[row, column] == 'Continuer':
+                dialogue_acts_dataframe.iloc[row, column] = 3
+            elif dialogue_acts_dataframe.iloc[row, column] == 'whQuestion':
+                dialogue_acts_dataframe.iloc[row, column] = 4
+            elif dialogue_acts_dataframe.iloc[row, column] == 'System':
+                dialogue_acts_dataframe.iloc[row, column] = 5
+            elif dialogue_acts_dataframe.iloc[row, column] == 'Accept':
+                dialogue_acts_dataframe.iloc[row, column] = 6
+            elif dialogue_acts_dataframe.iloc[row, column] == 'Clarify':
+                dialogue_acts_dataframe.iloc[row, column] = 7
+            elif dialogue_acts_dataframe.iloc[row, column] == 'Emphasis':
+                dialogue_acts_dataframe.iloc[row, column] = 8
+            elif dialogue_acts_dataframe.iloc[row, column] == 'nAnswer':
+                dialogue_acts_dataframe.iloc[row, column] = 9
+            elif dialogue_acts_dataframe.iloc[row, column] == 'Greet':
+                dialogue_acts_dataframe.iloc[row, column] = 10
+            elif dialogue_acts_dataframe.iloc[row, column] == 'Statement':
+                dialogue_acts_dataframe.iloc[row, column] = 11
+            elif dialogue_acts_dataframe.iloc[row, column] == 'Reject':
+                dialogue_acts_dataframe.iloc[row, column] = 12
+            elif dialogue_acts_dataframe.iloc[row, column] == 'Bye':
+                dialogue_acts_dataframe.iloc[row, column] = 13
+            elif dialogue_acts_dataframe.iloc[row, column] == 'Other':
+                dialogue_acts_dataframe.iloc[row, column] = 14
+            elif dialogue_acts_dataframe.iloc[row, column] == 'ynQuestion':
+                dialogue_acts_dataframe.iloc[row, column] = 15
+            else:
+                dialogue_acts_dataframe.iloc[row, column] = 0
+    
+    # Let us only consider the compound sentiment of each utterance
+    sentiment_rows, sentiment_columns = sentiments_dataframe.shape
+    for row in range(sentiment_rows):
+        for column in range(sentiment_columns):
+            if isinstance(sentiments_dataframe.iloc[row, column], dict):
+                sentiments_dataframe.iloc[row, column] = sentiments_dataframe.iloc[row, column]['compound']
+            else:
+                sentiments_dataframe.iloc[row, column] = 0
+    
+    # Impute the mean to the missing values NOT DONE YET!!!
+    emotion_rows, emotion_columns = emotions_dataframe.shape
+    for row in range(emotion_rows):
+        for column in range(emotion_columns):
+            if emotions_dataframe.iloc[row, column] == None:
+                emotions_dataframe.iloc[row, column] = -1
+            elif len(emotions_dataframe.iloc[row, column]) == 0:
+                emotions_dataframe.iloc[row, column] = -1
+            else:
+                emotions_dataframe.iloc[row, column] = emotions_dataframe.iloc[row, column][0]
+
+    # Remove constant columns
+    # Find constant columns from the dialogue act dataframe
+    const_columns = []
+    for column in range(dialogue_columns):
+        if dialogue_acts_dataframe.iloc[:, column].std() == 0:
+            const_columns.append(column)
+
+    # Remove the constant columns from all dataframes
+    # Make two copies of the dialogue acts dataframe.
+    # From one, the sentiment constant columns will be removed
+    # and the emotion constant columns from the other
+    dialogue_acts_sentiment_dataframe = dialogue_acts_dataframe.drop(dialogue_acts_dataframe.columns[const_columns], axis=1)
+    dialogue_acts_emotion_dataframe = dialogue_acts_dataframe.drop(dialogue_acts_dataframe.columns[const_columns], axis=1)
+    sentiments_dataframe = sentiments_dataframe.drop(sentiments_dataframe.columns[const_columns], axis=1)
+    emotions_dataframe = emotions_dataframe.drop(emotions_dataframe.columns[const_columns], axis=1)
+
+    # Reset const_columns and set the rows and columns values to the new dimensions, after removing columns
+    const_columns = []
+    sentiment_rows, sentiment_columns = sentiments_dataframe.shape
+
+    # Find constant columns from the sentiments dataframe
+    for column in range(sentiment_columns):
+        if sentiments_dataframe.iloc[:, column].std() == 0:
+            const_columns.append(column)
+
+    # Remove the sentiment constant columns from sentiment & dialogue acts dataframes
+    dialogue_acts_sentiment_dataframe = dialogue_acts_sentiment_dataframe.drop(dialogue_acts_sentiment_dataframe.columns[const_columns], axis=1)
+    sentiments_dataframe = sentiments_dataframe.drop(sentiments_dataframe.columns[const_columns], axis=1)
+
+    # Reset const_columns and set the rows and columns values to the new dimensions, after removing columns
+    const_columns = []
+    emotion_rows, emotion_columns = emotions_dataframe.shape
+
+    # Find constant columns from the emotions dataframe
+    for column in range(emotion_columns):
+        if emotions_dataframe.iloc[:, column].std() == 0:
+            const_columns.append(column)
+
+    # Remove the emotion constant columns from emotion & dialogue acts dataframes
+    dialogue_acts_emotion_dataframe = dialogue_acts_emotion_dataframe.drop(dialogue_acts_emotion_dataframe.columns[const_columns], axis=1)
+    emotions_dataframe = emotions_dataframe.drop(emotions_dataframe.columns[const_columns], axis=1)
+
+    # Calculate the correlations
+    sentiment_correlation = dialogue_acts_sentiment_dataframe.corrwith(sentiments_dataframe)
+    emotion_correlation = dialogue_acts_emotion_dataframe.corrwith(emotions_dataframe)
+
+    return emotion_correlation, sentiment_correlation
+
+def main():
+    # Prints the matches
+    correlations, highest_emotion_correlations = calculate_matching('all_dialogue_predictions.json', 'emos.json', 'sentiments.json')
+    print("List of lists with the dialogue acts as the first element and the emotion most associated with that dialogue act as the second element")
     print(highest_emotion_correlations)
+
+    # Prints the correlations
+    emotion_correlation, sentiment_correlation = calculate_correlations('all_dialogue_predictions.json', 'emos_upper_level.json', 'sentiments.json')
+    print("Dialogue act / emotion correlations")
+    print(emotion_correlation)
+    print("Dialogue act / sentiment correlations")
+    print(sentiment_correlation)
 
 if __name__ == "__main__":
     main()

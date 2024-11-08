@@ -53,7 +53,7 @@ def get_negation(utterance):
     return counter
 
 def get_dialogue_acts(dialogs):
-    with open('dialogues_act.txt', 'r') as file:
+    with open('ijcnlp_dailydialog/dialogues_emotion.txt', 'r') as file:
         acts = file.readlines()
     
     act_tags = {1: 'inform', 2: 'question', 3: 'directive', 4: 'commissive' }
@@ -78,7 +78,7 @@ def get_dialogue_acts(dialogs):
 
 def get_utterances(dialogs):
 
-    with open("dialogues_emotion.txt", "r", encoding="utf-8") as file:
+    with open("ijcnlp_dailydialog/dialogues_emotion.txt", "r", encoding="utf-8") as file:
         emotion_numbers = file.readlines()
 
     en = []
