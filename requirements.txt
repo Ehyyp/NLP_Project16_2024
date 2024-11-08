@@ -1,0 +1,9 @@
+pandas
+numpy
+openpyxl
+xlswriter
+nltk
+spacy
+vaderSentiment
+scikit-learn
+matplotlib
