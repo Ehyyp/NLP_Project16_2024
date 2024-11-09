@@ -9,28 +9,67 @@ import json
 import nltk
 from emotion import Emotion
 from sklearn.metrics import accuracy_score, precision_score, recall_score
-import utils
 import random
 import numpy as np
 
 wna = WNAffect('wordnet-1.6/', 'wn-domains-3.2/')
 
-# Tokenizes each utterance and tags each word’s part of speech (POS).
-# Queries WNAffect to get emotions for each word in the utterance based on POS tags, accumulating any detected emotions in a list.
-# Returns list of emotions for utterance
-def get_emotions(utterance):
+def get_dialogs():
 
-    tokens = word_tokenize(utterance)
-    pos_tags = pos_tag(tokens)
+    with open("ijcnlp_dailydialog/dialogues_text.txt", "r", encoding="utf-8") as file:
+        dialogs = file.readlines()
 
+    parsed_dialogs = []
+    for dialog in dialogs:
+        d = dialog.split("__eou__")
+        d = d[:-1]
+        parsed_dialogs.append(d)
+
+    return parsed_dialogs
+
+def get_emotions(dialogs):
+    with open("ijcnlp_dailydialog/dialogues_emotion.txt", "r", encoding="utf-8") as file:
+        emotion_numbers = file.readlines()
+
+    en = []
+    for e in emotion_numbers:
+        a = e.split(" ")
+        a = a[:-1]
+        en.append(a)
+
+    utterances = []
     emotions = []
-    for i in range(len(tokens)):
-        emo = wna.get_emotion(tokens[i], pos_tags[i][1])
-        if emo != None:
-            emotions.append(emo.name)
-            Emotion.printTree(Emotion.emotions[emo.name])
-            parent = emo.get_level(emo.level - 1)
-            print("parent: " + parent.name)
+    i = 0
+    for dialog in dialogs:
+        if len(dialog) != len(en[i]):
+            en[i].append(0)
+        utterances.extend(dialog)
+        emotions.extend(en[i])
+
+        i += 1
+
+    return emotions
+
+def get_emotions(dialogs):
+    with open("ijcnlp_dailydialog/dialogues_emotion.txt", "r", encoding="utf-8") as file:
+        emotion_numbers = file.readlines()
+
+    en = []
+    for e in emotion_numbers:
+        a = e.split(" ")
+        a = a[:-1]
+        en.append(a)
+
+    utterances = []
+    emotions = []
+    i = 0
+    for dialog in dialogs:
+        if len(dialog) != len(en[i]):
+            en[i].append(0)
+        utterances.extend(dialog)
+        emotions.extend(en[i])
+
+        i += 1
 
     return emotions
 
@@ -42,7 +81,7 @@ def get_emotions(utterance):
 # Prints accuracy and precision scores.
 def validate(emotions):
 
-    with open("dialogues_emotion.txt", "r", encoding="utf-8") as file:
+    with open("ijcnlp_dailydialog/dialogues_emotion.txt", "r", encoding="utf-8") as file:
         emotion_numbers = file.readlines()
 
     en = []
@@ -102,7 +141,7 @@ def validate(emotions):
 
 def validate_m(emotions):
     
-    emotion_tags = utils.get_emotions(utils.get_dialogs())
+    emotion_tags = get_emotions(get_dialogs())
 
     emo_tags = {0: "no emotion", 1: "anger", 2: "disgust", 3: "fear", 4: "happiness", 5: "sadness", 6: "surprise"}
 
@@ -141,7 +180,7 @@ def get_pred_class(emotions, y_true):
 # Calls get_dialogs to load dialogues.
 # Saves emotions fro each utterance to emos.json
 def save_emotions():
-    dialogs = utils.get_dialogs()
+    dialogs = get_dialogs()
 
     emotions = []
 
