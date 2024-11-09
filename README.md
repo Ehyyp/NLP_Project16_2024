@@ -8,12 +8,12 @@ The last task is also provided as python source file, since the notebook kernel 
 
 Steps to using the notebook:
 
-1. Fork the repository
+1. Clone the repository
 2. Install dependencies from requirements.txt
 3. Install desired spacy language models. Default is the English medium model, "en_core_web_md". This can be installed with:
     python -m spacy download en_core_web_md
    Other options are the small "en_core_web_sm" and large "en_core_web_lg" models. All three are used in the report.
 
-Make sure that you have included the "wnaffect.py" and "emotion.py" files. These are used in the emotion and sentiment calculations.
+Make sure that you have included the "wnaffect.py" and "emotion.py" files and wn-domains-3.2 and wordnet-1.6 directories. These are used in the emotion and sentiment calculations.
 The dataset is saved in the "ijcnlp_dailydialog" directory.
 All other files are data files that the notebook blocks create from the Dailydialog dataset.
