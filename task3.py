@@ -217,7 +217,10 @@ def results_a2():
 # Loads emotions from emos.json and validates them against the expected labels in dialogues_emotion.txt.
 def main():
 
+    print("Results for A1")
     results_a1()
+    print("")
+    print("Results for A2")
     results_a2()
 
 if __name__ == "__main__":
