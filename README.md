@@ -13,6 +13,8 @@ Steps to using the notebook:
 3. Install desired spacy language models. Default is the English medium model, "en_core_web_md". This can be installed with:
     python -m spacy download en_core_web_md
    Other options are the small "en_core_web_sm" and large "en_core_web_lg" models. All three are used in the report.
+4. Download wordnet-1.6 from https://wordnet.princeton.edu/download/old-versions
+5. Download Wordnet Domains 3.2 from https://wndomains.fbk.eu/download.html
 
 Make sure that you have included the "wnaffect.py" and "emotion.py" files and wn-domains-3.2 and wordnet-1.6 directories. These are used in the emotion and sentiment calculations.
 The dataset is saved in the "ijcnlp_dailydialog" directory.
