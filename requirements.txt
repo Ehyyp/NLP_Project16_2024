@@ -1,7 +1,7 @@
 pandas
 numpy
 openpyxl
-xlswriter
+xlsxwriter
 nltk
 spacy
 vaderSentiment
